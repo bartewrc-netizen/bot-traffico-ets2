@@ -114,7 +114,6 @@ def run_flask():
     # '0.0.0.0' è OBBLIGATORIO per Railway
     app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
 
-
 # --- 2. CONFIGURAZIONE BOT DISCORD ---
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
