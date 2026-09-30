@@ -1,0 +1,84 @@
+import os
+import discord
+from discord.ext import tasks, commands
+import requests
+
+# Configurazione del Bot Discord usando i comandi prefissati
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+# URL fisso dell'API di TruckersMP per monitorare lo stato del traffico
+TRUCKERSMP_API = "https://truckersmp.com"
+
+@bot.event
+async def on_ready():
+    print(f"✅ Bot connesso come {bot.user.name}")
+    # Avvia il loop di monitoraggio automatico in background
+    aggiornamento_traffico.start()
+
+@bot.command(name="traffico")
+async def mostra_traffico(ctx, *, server_name: str = "Simulation 1"):
+    """Comando manuale per verificare il traffico su uno specifico server di ETS2"""
+    await ctx.send(f"🔍 Controllo del traffico in tempo reale per il server: {server_name}...")
+    
+    try:
+        response = requests.get(TRUCKERSMP_API)
+        if response.status_code == 200:
+            data = response.json()
+            servers = data.get("response", [])
+            
+            # Cerca il server richiesto all'interno dei dati dell'API
+            found_server = next((s for s in servers if server_name.lower() in s.get("name", "").lower()), None)
+            
+            if found_server:
+                name = found_server.get("name")
+                players = found_server.get("players")
+                max_players = found_server.get("maxplayers")
+                queue = found_server.get("queue", 0)
+                
+                # Calcolo dello stato di congestione
+                stato = "Fluido 🟢"
+                if queue > 50 or (players / max_players) > 0.85:
+                    stato = "Intenso 🔴"
+                elif queue > 0 or (players / max_players) > 0.60:
+                    stato = "Moderato 🟡"
+
+                embed = discord.Embed(title=f"📊 Traffico ETS2 - {name}", color=discord.Color.blue())
+                embed.add_field(name="Giocatori Online", value=f"{players} / {max_players}", inline=True)
+                embed.add_field(name="In Coda", value=str(queue), inline=True)
+                embed.add_field(name="Stato Autostrade", value=stato, inline=False)
+                embed.set_footer(text="Dati in tempo reale da TruckersMP")
+                
+                await ctx.send(embed=embed)
+            else:
+                await ctx.send(f"❌ Server '{server_name}' non trovato. Riprova con un nome valido (es. Simulation 1, Simulation 2).")
+        else:
+            await ctx.send("⚠ Impossibile connettersi ai server di TruckersMP al momento.")
+    except Exception as e:
+        await ctx.send(f"❌ Si è verificato un errore durante il recupero dei dati: {str(e)}")
+
+@tasks.loop(minutes=5)
+async def aggiornamento_traffico():
+    """Aggiorna lo stato del bot ogni 5 anni cambiando l'attività dinamica su Discord"""
+    try:
+        response = requests.get(TRUCKERSMP_API)
+        if response.status_code == 200:
+            data = response.json()
+            servers = data.get("response", [])
+            # Prende come riferimento il server principale Simulation 1
+            sim1 = next((s for s in servers if "Simulation 1" in s.get("name", "")), None)
+            if sim1:
+                activity_text = f"ETS2 Sim1: {sim1.get('players')} piloti"
+                await bot.change_presence(activity=discord.Game(name=activity_text))
+    except Exception as e:
+        print(f"Errore nel loop di aggiornamento: {e}")
+
+# Sostituisci direttamente con il tuo Token Discord reale se non usi il file .env
+TOKEN = os.getenv("DISCORD_TOKEN", "INSERISCI_QUI_IL_TUO_TOKEN_SE_NON_USI_ENV")
+
+if __name__ == "__main__":
+    if TOKEN.startswith("INSERISCI_QUI"):
+        print("❌ ERRORE: Devi inserire un Token Discord valido in fondo al file app.py o nel file .env prima di avviare lo script!")
+    else:
+        bot.run(TOKEN)
