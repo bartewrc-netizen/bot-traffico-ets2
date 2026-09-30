@@ -1,0 +1,37 @@
+import os
+import threading
+import discord
+from discord.ext import commands
+from flask import Flask
+
+# 1. Configurazione Flask
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Server Web Online!"
+
+def run_flask():
+    # Porta richiesta da Railway/Render
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
+# 2. Configurazione Bot Discord
+intents = discord.Intents.default()
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+@bot.event
+async def on_ready():
+    print(f"Bot connesso come {bot.user}")
+
+# 3. Avvio Flask in un Thread separato e Bot Discord nel main
+if __name__ == "__main__":
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
+
+    # Prende il TOKEN dalle variabili d'ambiente di Railway
+    DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
+    if DISCORD_TOKEN:
+        bot.run(DISCORD_TOKEN)
+    else:
+        print("[ERRORE] Manca il DISCORD_TOKEN nelle variabili!")
