@@ -126,7 +126,6 @@ async def on_ready():
 async def ping(ctx):
     await ctx.send("Pong! Il bot ETS2 è attivo.")
 
-
 # --- 3. AVVIO PARALLELO ---
 if __name__ == "__main__":
     # Avvia Flask in un thread separato
