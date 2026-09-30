@@ -138,6 +138,20 @@ if __name__ == "__main__":
     # Avvia il Bot Discord nel thread principale
     token = os.environ.get("DISCORD_TOKEN")
     if token:
+
+        @bot.command()
+async def mappa(ctx):
+    # Sostituisci con l'URL pubblico generato da Railway
+    url_mappa = os.environ.get("RAILWAY_STATIC_URL", "https://tuo-app.up.railway.app")
+    if not url_mappa.startswith("http"):
+        url_mappa = f"https://{url_mappa}"
+        
+    embed = discord.Embed(
+        title="🗺️ Mappa Traffico Live ETS2 / TruckersMP",
+        description=f"Consulta lo stato del traffico e i punti caldi in tempo reale:\n[Clicca qui per aprire la mappa]({url_mappa})",
+        color=discord.Color.blue()
+    )
+    await ctx.send(embed=embed)
         print("Avvio del bot Discord in corso...")
         bot.run(token)
     else:
