@@ -154,3 +154,27 @@ async def mappa(ctx):
         bot.run(token)
     else:
         print("[ERRORE] Variabile DISCORD_TOKEN non trovata su Railway!")
+@bot.command()
+async def traffico(ctx):
+    traffic_data = get_truckersmp_traffic()
+    if not traffic_data:
+        await ctx.send("❌ Impossibile recuperare i dati del traffico al momento.")
+        return
+
+    embed = discord.Embed(
+        title="🚦 Top Zone Affollate - TruckersMP",
+        color=discord.Color.red()
+    )
+    
+    # Prende le prime 5 zone più critiche
+    for zone in traffic_data[:5]:
+        nome = zone.get("name", "Sconosciuta")
+        player = zone.get("players", 0)
+        gravita = zone.get("severity", "N/D")
+        embed.add_field(
+            name=f"📍 {nome}",
+            value=f"**Giocatori:** {player} | **Intensità:** {gravita}",
+            inline=False
+        )
+
+    await ctx.send(embed=embed)
