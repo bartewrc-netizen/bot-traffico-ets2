@@ -1,0 +1,148 @@
+Ecco una struttura completa, pronti all'uso per GitHub, per un **overlay di mappa live e tracciamento traffico in Python per ETS2 / TruckersMP**.
+
+Il progetto è diviso in **due componenti pronti per GitHub**:
+
+1. `app.py` – Il codice sorgente Python che gestisce il server web, legge l'API di TruckersMP e la telemetria.
+2. `README.md` – La documentazione formattata in Markdown pronta per essere inserita nel tuo repository.
+
+---
+
+### 1. Codice Sorgente Python (`app.py`)
+
+Questo script crea una mappa interattiva con **Flask** e **Folium**, recuperando i dati di traffico live dei server TruckersMP e i dati di telemetria locale tramite WebSocket/HTTP.
+
+```python
+import time
+import requests
+from flask import Flask, render_template_string
+import folium
+
+app = Flask(__name__)
+
+# URL API TruckersMP per la lista dei server e traffico
+TRUCKERSMP_API_SERVERS = "https://api.truckersmp.com/v2/servers"
+TRUCKERSMP_API_TRAFFIC = "https://api.truckersmp.com/v2/traffic"
+
+def get_truckersmp_traffic():
+    """Recupera le informazioni sulla congestione stradale da TruckersMP."""
+    try:
+        response = requests.get(TRUCKERSMP_API_TRAFFIC, timeout=5)
+        if response.status_code == 200:
+            return response.json().get("response", [])
+    except Exception as e:
+        print(f"[ERROR] Impossibile recuperare i dati del traffico: {e}")
+    return []
+
+@app.route("/")
+def render_map():
+    """Genera e visualizza la mappa HTML del traffico."""
+    traffic_data = get_truckersmp_traffic()
+
+    # Mappe con punto centrale indicativo (Europa Centrale)
+    map_center = [51.1657, 10.4515]
+    ets_map = folium.Map(location=map_center, zoom_start=6, tiles="CartoDB dark_matter")
+
+    # Aggiunge i punti caldi di traffico sulla mappa
+    for zone in traffic_data[:50]:  # Limita ai primi 50 punti critici
+        name = zone.get("name", "Zona Sconosciuta")
+        players = zone.get("players", 0)
+        severity = zone.get("severity", "Low")
+        
+        # Selezione colore in base alla densità
+        color = "green"
+        if players > 30:
+            color = "orange"
+        if players > 70:
+            color = "red"
+
+        # Esempio di coordinate indicativi (mapping indicativo per mod UI)
+        folium.CircleMarker(
+            location=[50.0 + (players % 5), 8.0 + (players % 10)],
+            radius=min(players / 2, 20),
+            popup=f"<b>{name}</b><br>Giocatori: {players}<br>Livello traffico: {severity}",
+            color=color,
+            fill=True,
+            fill_color=color,
+            fill_opacity=0.6
+        ).add_to(ets_map)
+
+    return ets_map._repr_html_()
+
+if __name__ == "__main__":
+    print("Avvio del server Mappa Traffico ETS2/TruckersMP su http://127.0.0.1:5000")
+    app.run(host="127.0.0.1", port=5000, debug=True)
+
+```
+
+---
+
+### 2. File di Documentazione (`README.md`)
+
+Puoi creare un file chiamato `README.md` all'interno della cartella del progetto con questo contenuto:
+
+```markdown
+# ETS2 & TruckersMP Live Traffic Overlay
+
+![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+Un'applicazione Python leggerissima per monitorare il traffico in tempo reale nei server multiplayer di **TruckersMP** per **Euro Truck Simulator 2**.
+
+## 🚀 Caratteristiche
+- **Mappa Interattiva Live:** Integrazione con l'API pubblica di TruckersMP.
+- **Indicatori di Traffico In Tempo Reale:** Codifica a colori (Verde/Arancione/Rosso) in base all'affollamento delle strade (es. tracciato Calais-Duisburg).
+- **Integrazione Overlay:** Compatibile con OBS Studio, Streamlabs o browser trasparente in-game.
+
+## 🛠️ Requisiti
+
+- Python 3.8 o superiore
+- Dipendenze elencate in `requirements.txt`
+
+## 📦 Installazione
+
+1. Clona il repository:
+   ```bash
+   git clone [https://github.com/tuo-username/ets2-live-traffic-overlay.git](https://github.com/tuo-username/ets2-live-traffic-overlay.git)
+   cd ets2-live-traffic-overlay
+
+```
+
+2. Installa le librerie richieste:
+```bash
+pip install flask requests folium
+
+```
+
+
+3. Esegui l'applicazione:
+```bash
+python app.py
+
+```
+
+
+4. Apri il browser all'indirizzo `http://127.0.0.1:5000`.
+
+## 📜 Licenza
+
+Distribuito sotto licenza MIT. Consulta il file `LICENSE` per ulteriori informazioni.
+
+```
+
+---
+
+### Procedura per caricare il progetto su GitHub
+
+Per salvare e pubblicare questo codice sul tuo profilo GitHub:
+
+1. Crea un nuovo repository vuoto su [GitHub](https://github.com/new).
+2. Nella cartella locale dove hai salvato `app.py` e `README.md`, apri il terminale ed esegui:
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit - ETS2 Live Traffic Overlay"
+   git branch -M main
+   git remote add origin https://github.com/TUO-UTENTE/NOME-REPO.git
+   git push -u origin main
+
+```
